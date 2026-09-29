@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Passive Enclave Threat Intelligence</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
+        h1 { color: #38bdf8; border-bottom: 2px solid #1e293b; padding-bottom: 10px; }
+        .stats-bar { display: flex; gap: 20px; margin-bottom: 20px; }
+        .card { background: #1e293b; padding: 15px 20px; border-radius: 8px; flex: 1; border: 1px solid #334155; }
+        .card h3 { margin: 0; font-size: 0.85em; color: #94a3b8; text-transform: uppercase; }
+        .card p { margin: 5px 0 0 0; font-size: 1.8em; font-weight: bold; color: #f1f5f9; }
+        table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #0f172a; color: #94a3b8; font-size: 0.85em; text-transform: uppercase; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; }
+        .CRITICAL { background: #ef4444; color: white; }
+        .HIGH { background: #f97316; color: white; }
+        .MEDIUM { background: #eab308; color: black; }
+    </style>
+</head>
+<body>
+
+    <h1>🛡️ Passive Network Enclave — Threat Intelligence</h1>
+
+    <div class="stats-bar">
+        <div class="card"><h3>Ingest Mode</h3><p>ONE-WAY TAP (READ-ONLY)</p></div>
+        <div class="card"><h3>Tested Rate</h3><p>5,000 Flows/s</p></div>
+        <div class="card"><h3>Active Threat Alerts</h3><p id="alert-count">0</p></div>
+    </div>
+
+    <h2>Live Intelligence Stream</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Alert ID</th>
+                <th>Source -> Dest</th>
+                <th>Threat Classification</th>
+                <th>Confidence</th>
+                <th>Severity</th>
+                <th>Evidence</th>
+            </tr>
+        </thead>
+        <tbody id="alert-table">
+            <!-- Dynamic alerts appear here -->
+        </tbody>
+    </table>
+
+    <script>
+        const ws = new WebSocket(`ws://${location.host}/ws/alerts`);
+        let alertCount = 0;
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            alertCount++;
+            document.getElementById('alert-count').innerText = alertCount;
+
+            const tbody = document.getElementById('alert-table');
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td>${data.timestamp.split('T')[1].replace('Z','')}</td>
+                <td><code>${data.alert_id}</code></td>
+                <td>${data.flow_id.src_ip} -> ${data.flow_id.dst_ip}</td>
+                <td><strong>${data.threat_class}</strong></td>
+                <td>${(data.confidence_score * 100).toFixed(1)}%</td>
+                <td><span class="badge ${data.severity}">${data.severity}</span></td>
+                <td><code>${JSON.stringify(data.evidence)}</code></td>
+            `;
+
+            tbody.insertBefore(row, tbody.firstChild);
+        };
+    </script>
+</body>
+</html>
